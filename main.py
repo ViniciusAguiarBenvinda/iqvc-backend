@@ -73,19 +73,23 @@ async def upload_csv(file: UploadFile = File(...)):
 
     # Gerar CSVs temporários
     temp_dir = tempfile.gettempdir()
-    missao_path = os.path.join(temp_dir, "medias_por_missao.csv")
-    regional_path = os.path.join(temp_dir, "medias_por_regional.csv")
-
+    missao_path = os.path.join("static", "medias_por_missao.csv")
+    regional_path = os.path.join("static", "medias_por_regional.csv")
     pd.DataFrame(medias_missao).T.to_csv(missao_path, index=True)
     pd.DataFrame(medias_regional).T.to_csv(regional_path, index=True)
 
-    # (opcional: você pode mover os arquivos ou zipar, se quiser disponibilizar pro frontend)
-
-    # Remover arquivos temporários após uso
-    os.remove(missao_path)
-    os.remove(regional_path)
-
     return {
         "por_missao": medias_missao,
-        "por_regional": medias_regional
+        "por_regional": medias_regional,
+        "links": {
+            "missao_csv": "/download/medias_por_missao.csv",
+            "regional_csv": "/download/medias_por_regional.csv"
+        }
     }
+
+@app.get("/download/{filename}")
+def download_csv(filename: str):
+    file_path = os.path.join("static", filename)
+    if os.path.exists(file_path):
+        return FileResponse(file_path, media_type='text/csv', filename=filename)
+    return {"error": "Arquivo não encontrado"}
